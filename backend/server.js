@@ -15,6 +15,8 @@ const symptomsRoutes = require('./routes/symptoms');
 
 const app = express();
 
+
+
 // ── Middleware ──
 app.use(cors({
   origin: 'http://localhost:5173', // Vite dev server

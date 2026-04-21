@@ -59,7 +59,7 @@ export default function Login() {
           phone: signupData.emergencyPhone,
         },
       }
-      const res = await api.post('/auth/register', payload)
+      const res = await api.post("/api/auth/register", data)
       login(res.data, res.data.token)
       navigate('/')
     } catch (err) {

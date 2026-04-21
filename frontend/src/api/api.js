@@ -2,17 +2,16 @@
 // utils/api.js — Axios API Client
 //
 // Pre-configured Axios instance that:
-// - Points to http://localhost:5000/api
+// - Points to https://sentinal.onrender.com
 // - Automatically injects the JWT Bearer token from localStorage
 // - Handles 401 errors by clearing session
 // ============================================================
 
 import axios from 'axios'
 
-const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
-  headers: { 'Content-Type': 'application/json' },
-})
+const API = axios.create({
+  baseURL: "https://sentinal.onrender.com"
+});
 
 // ── Request interceptor: attach token to every request ──
 api.interceptors.request.use(
