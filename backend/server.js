@@ -8,7 +8,6 @@ const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
-// const { initWebSocketServer } = require('./websocket/wsServer.js');
 const { initWebSocketServer } = require('./websocket/wsServer.js');
 // ── Route imports ──
 const authRoutes     = require('./routes/auth');
@@ -44,7 +43,6 @@ const server = http.createServer(app);
 
 // ── Attach WebSocket server to the same HTTP server ──
 // WebSocket runs on the same port at ws://localhost:5000
-// initWebSocketServer(server);
 initWebSocketServer(server);
 
 const PORT = process.env.PORT || 5000;
