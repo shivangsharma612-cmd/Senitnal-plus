@@ -26,48 +26,58 @@ export default function Login() {
   })
 
   const handleLogin = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      const res = await api.post('/auth/login', loginData)
-      login(res.data, res.data.token)
-      navigate('/')
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed')
-    } finally {
-      setLoading(false)
-    }
+  e.preventDefault()
+
+  try {
+    const res = await api.post("/api/auth/login", {
+      email: loginData.email,
+      password: loginData.password
+    });
+
+    login(res.data, res.data.token)   // 🔥 IMPORTANT
+    navigate("/dashboard");
+
+  } catch (err) {
+    alert("Login failed (or demo mode)")
+  }
+};
+
+const handleSignup = async (e) => {
+  e.preventDefault()
+  setError('')
+
+  if (signupData.password.length < 6) {
+    return setError('Password must be at least 6 characters')
   }
 
-  const handleSignup = async (e) => {
-    e.preventDefault()
-    setError('')
-    if (signupData.password.length < 6) {
-      return setError('Password must be at least 6 characters')
+  setLoading(true)
+
+  try {
+    const payload = {
+      name: signupData.name,
+      email: signupData.email,
+      password: signupData.password,
+      age: parseInt(signupData.age) || undefined,
+      medicalHistory: signupData.medicalHistory,
+      emergencyContact: {
+        name: signupData.emergencyName,
+        phone: signupData.emergencyPhone,
+      },
     }
-    setLoading(true)
-    try {
-      const payload = {
-        name:  signupData.name,
-        email: signupData.email,
-        password: signupData.password,
-        age:   parseInt(signupData.age) || undefined,
-        medicalHistory: signupData.medicalHistory,
-        emergencyContact: {
-          name:  signupData.emergencyName,
-          phone: signupData.emergencyPhone,
-        },
-      }
-      const res = await api.post("/api/auth/register", data)
-      login(res.data, res.data.token)
-      navigate('/')
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed')
-    } finally {
-      setLoading(false)
-    }
+
+    const res = await api.post("/api/auth/register", payload)
+
+    console.log("SUCCESS:", res.data)
+
+    alert("Registration Successful")
+
+  } catch (err) {
+    console.error("ERROR:", err)
+    setError(err.response?.data?.message || 'Registration failed')
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <div style={{
