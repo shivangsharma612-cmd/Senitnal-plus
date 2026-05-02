@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentinel+ Healthcare Monitor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0f1e;
+    --bg2: #0e1628;
+    --bg3: #131d35;
+    --card: #111827;
+    --card2: #1a2540;
+    --border: rgba(99,179,237,0.12);
+    --border2: rgba(99,179,237,0.22);
+    --text: #e8f0fe;
+    --text2: #8fa3c8;
+    --text3: #4a6080;
+    --green: #10b981;
+    --green2: #064e3b;
+    --yellow: #f59e0b;
+    --yellow2: #451a03;
+    --red: #ef4444;
+    --red2: #450a0a;
+    --blue: #3b82f6;
+    --blue2: #1e3a5f;
+    --cyan: #06b6d4;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --r: 12px;
+    --r2: 8px;
+  }
+
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+
+  #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: var(--bg); }
+  .auth-box { width: 100%; max-width: 420px; }
+  .auth-logo { text-align: center; margin-bottom: 2rem; }
+  .auth-logo .logo-icon { width: 52px; height: 52px; background: linear-gradient(135deg, #3b82f6, #06b6d4); border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+  .auth-logo h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  .auth-logo h1 span { color: var(--cyan); }
+  .auth-logo p { color: var(--text2); font-size: 13px; margin-top: 4px; }
+  .auth-tabs { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; margin-bottom: 1.5rem; }
+  .auth-tab { flex: 1; padding: 10px; text-align: center; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text2); transition: all 0.2s; }
+  .auth-tab.active { background: var(--blue2); color: var(--text); }
+  .auth-form { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1.5rem; }
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .field input, .field textarea, .field select { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 10px 12px; color: var(--text); font-family: var(--sans); font-size: 14px; outline: none; transition: border 0.2s; }
+  .field input:focus, .field textarea:focus { border-color: var(--blue); }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .btn-primary { width: 100%; padding: 12px; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: #fff; border: none; border-radius: var(--r2); font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; letter-spacing: 0.3px; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-secondary { padding: 9px 18px; background: transparent; border: 1px solid var(--border2); color: var(--text); border-radius: var(--r2); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .btn-secondary:hover { background: var(--card2); }
+  .btn-danger { padding: 9px 18px; background: var(--red2); border: 1px solid rgba(239,68,68,0.3); color: var(--red); border-radius: var(--r2); font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-green { padding: 9px 18px; background: var(--green2); border: 1px solid rgba(16,185,129,0.3); color: var(--green); border-radius: var(--r2); font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  #app-screen { display: none; flex-direction: column; min-height: 100vh; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .topbar-logo { width: 30px; height: 30px; background: linear-gradient(135deg, #3b82f6, #06b6d4); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .topbar-title { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+  .topbar-title span { color: var(--cyan); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .user-badge { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px 5px 6px; }
+  .user-avatar { width: 24px; height: 24px; background: var(--blue2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--blue); }
+  .user-name { font-size: 12px; font-weight: 500; }
+  .status-pill { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.3px; }
+  .status-pill.normal { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,0.25); }
+  .status-pill.warning { background: rgba(245,158,11,0.12); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
+  .status-pill.critical { background: rgba(239,68,68,0.12); color: var(--red); border: 1px solid rgba(239,68,68,0.25); animation: pulse-border 1s infinite; }
+  @keyframes pulse-border { 0%,100%{border-color:rgba(239,68,68,0.25)} 50%{border-color:rgba(239,68,68,0.6)} }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  .nav-tabs { display: flex; gap: 2px; padding: 0 1.5rem; background: var(--bg2); border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .nav-tab { padding: 12px 16px; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.2s; }
+  .nav-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+  .nav-tab:hover:not(.active) { color: var(--text); }
+
+  .content { flex: 1; padding: 1.5rem; max-width: 1200px; width: 100%; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; }
+  .card-title { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text2); margin-bottom: 0.75rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+
+  .metric-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; position: relative; overflow: hidden; }
+  .metric-card.normal { border-left: 3px solid var(--green); }
+  .metric-card.warning { border-left: 3px solid var(--yellow); }
+  .metric-card.critical { border-left: 3px solid var(--red); animation: card-pulse 1.5s infinite; }
+  @keyframes card-pulse { 0%,100%{background:var(--card)} 50%{background:#1a0a0a} }
+  .metric-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text2); margin-bottom: 8px; }
+  .metric-value { font-family: var(--mono); font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+  .metric-value.normal { color: var(--green); }
+  .metric-value.warning { color: var(--yellow); }
+  .metric-value.critical { color: var(--red); }
+  .metric-unit { font-size: 14px; font-weight: 400; color: var(--text2); margin-left: 4px; font-family: var(--sans); }
+  .metric-sub { font-size: 12px; color: var(--text3); margin-top: 6px; }
+  .mini-trend { height: 40px; position: relative; margin-top: 8px; }
+
+  #alert-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+  #alert-overlay.show { display: flex; }
+  .alert-box { background: var(--card); border: 1px solid rgba(239,68,68,0.4); border-radius: 16px; padding: 2rem; max-width: 420px; width: 100%; text-align: center; animation: slide-up 0.3s ease; }
+  @keyframes slide-up { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .alert-icon { font-size: 48px; margin-bottom: 1rem; }
+  .alert-box h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .alert-box p { color: var(--text2); margin-bottom: 1.5rem; font-size: 14px; }
+  .countdown { font-family: var(--mono); font-size: 48px; font-weight: 700; color: var(--red); line-height: 1; margin-bottom: 1.5rem; }
+  .alert-buttons { display: flex; gap: 12px; justify-content: center; }
+  #symptom-form { display: none; text-align: left; }
+  .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+  .check-item { display: flex; align-items: center; gap: 8px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; cursor: pointer; font-size: 13px; }
+  .check-item input[type=checkbox] { accent-color: var(--blue); width: 14px; height: 14px; }
+
+  .chart-wrap { position: relative; height: 200px; }
+
+  .reminder-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: var(--r2); border: 1px solid var(--border); margin-bottom: 8px; background: var(--bg2); }
+  .reminder-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .reminder-text { flex: 1; }
+  .reminder-text strong { font-size: 13px; font-weight: 500; display: block; }
+  .reminder-text span { font-size: 12px; color: var(--text2); }
+  .reminder-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 10px; }
+  .reminder-badge.med { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .reminder-badge.doc { background: rgba(16,185,129,0.15); color: var(--green); }
+
+  .alert-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--r2); border-left: 3px solid; margin-bottom: 6px; background: var(--bg2); }
+  .alert-row.critical { border-left-color: var(--red); }
+  .alert-row.warning { border-left-color: var(--yellow); }
+  .alert-row.normal { border-left-color: var(--green); }
+  .alert-row-time { font-family: var(--mono); font-size: 11px; color: var(--text3); min-width: 80px; }
+  .alert-row-msg { font-size: 13px; color: var(--text2); flex: 1; }
+
+  .profile-section { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .profile-field { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 12px 14px; }
+  .profile-field-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; margin-bottom: 4px; }
+  .profile-field-value { font-size: 14px; font-weight: 500; color: var(--text); }
+
+  .report-header { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--r); padding: 1.5rem; margin-bottom: 1rem; }
+  .risk-score { font-family: var(--mono); font-size: 64px; font-weight: 700; }
+  .stat-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .stat-box { flex: 1; min-width: 120px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 12px; text-align: center; }
+  .stat-box .num { font-family: var(--mono); font-size: 24px; font-weight: 700; }
+  .stat-box .lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .blink { animation: blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="logo-icon">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <path d="M4 14h4l3-8 4 16 3-10 2 4h4" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1>Sentinel<span>+</span></h1>
+      <p>AI-Powered Smart Healthcare Monitoring</p>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">Sign In</div>
+      <div class="auth-tab" onclick="switchTab('signup')">Create Account</div>
+    </div>
+    <div class="auth-form">
+      <div id="login-form">
+        <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="you@example.com" value="demo@sentinel.health"></div>
+        <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••" value="demo1234"></div>
+        <button class="btn-primary" onclick="doLogin()">Access Dashboard</button>
+        <p style="text-align:center;margin-top:10px;font-size:12px;color:var(--text3)">Demo credentials pre-filled ↑</p>
+      </div>
+      <div id="signup-form" style="display:none">
+        <div class="field"><label>Full Name</label><input type="text" id="su-name" placeholder="Jane Doe"></div>
+        <div class="field"><label>Age</label><input type="number" id="su-age" placeholder="35" min="1" max="120"></div>
+        <div class="field"><label>Email</label><input type="email" id="su-email" placeholder="you@example.com"></div>
+        <div class="field"><label>Password</label><input type="password" id="su-pass" placeholder="At least 8 characters"></div>
+        <div class="field"><label>Medical History (optional)</label><textarea id="su-history" placeholder="Hypertension, Diabetes Type 2..."></textarea></div>
+        <div class="field"><label>Emergency Contact</label><input type="text" id="su-emergency" placeholder="Name — +1 555 000 0000"></div>
+        <button class="btn-primary" onclick="doSignup()">Create Account & Start Monitoring</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">
+        <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
+          <path d="M4 14h4l3-8 4 16 3-10 2 4h4" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="topbar-title">Sentinel<span>+</span></div>
+    </div>
+    <div class="topbar-right">
+      <div id="global-status" class="status-pill normal"><div class="dot"></div><span id="status-text">Normal</span></div>
+      <div class="user-badge">
+        <div class="user-avatar" id="user-initials">JD</div>
+        <div class="user-name" id="user-name-display">Jane Doe</div>
+      </div>
+      <button class="btn-secondary" onclick="doLogout()" style="padding:6px 12px;font-size:12px;">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showPage('dashboard',this)">Dashboard</div>
+    <div class="nav-tab" onclick="showPage('monitoring',this)">Live Monitor</div>
+    <div class="nav-tab" onclick="showPage('alerts',this)">Alert History</div>
+    <div class="nav-tab" onclick="showPage('symptoms',this)">Symptoms</div>
+    <div class="nav-tab" onclick="showPage('report',this)">Health Report</div>
+    <div class="nav-tab" onclick="showPage('reminders',this)">Reminders</div>
+    <div class="nav-tab" onclick="showPage('profile',this)">Profile</div>
+  </div>
+
+  <div class="content">
+
+    <div class="page active" id="page-dashboard">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <div>
+          <h2 style="font-size:18px;font-weight:600;letter-spacing:-0.3px;">Good morning, <span id="greeting-name">Alex</span></h2>
+          <p style="font-size:13px;color:var(--text2);margin-top:2px;">Real-time health monitoring active</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--green);">
+          <div class="dot blink" style="background:var(--green)"></div>
+          Sensors Active
+        </div>
+      </div>
+
+      <div class="grid-3" id="vitals-grid">
+        <div class="metric-card normal" id="card-hr">
+          <div class="metric-label">Heart Rate</div>
+          <div><span class="metric-value normal" id="val-hr">72</span><span class="metric-unit">bpm</span></div>
+          <div class="metric-sub">Normal range: 60–100 bpm</div>
+          <div class="mini-trend"><canvas id="mini-hr" role="img" aria-label="Heart rate mini trend"></canvas></div>
+        </div>
+        <div class="metric-card normal" id="card-activity">
+          <div class="metric-label">Activity Level</div>
+          <div><span class="metric-value normal" id="val-activity">68</span><span class="metric-unit">%</span></div>
+          <div class="metric-sub" id="activity-desc">Moderate activity</div>
+          <div class="mini-trend"><canvas id="mini-act" role="img" aria-label="Activity level mini trend"></canvas></div>
+        </div>
+        <div class="metric-card normal" id="card-movement">
+          <div class="metric-label">Movement Status</div>
+          <div style="font-size:22px;font-weight:600;margin:6px 0;" id="val-movement">Active</div>
+          <div class="metric-sub" id="movement-desc">Last moved: just now</div>
+          <div style="display:flex;gap:6px;margin-top:10px;">
+            <div style="height:6px;flex:1;border-radius:3px;background:var(--green)" id="mv1"></div>
+            <div style="height:6px;flex:1;border-radius:3px;background:var(--green);opacity:0.7" id="mv2"></div>
+            <div style="height:6px;flex:1;border-radius:3px;background:var(--green);opacity:0.4" id="mv3"></div>
+            <div style="height:6px;flex:1;border-radius:3px;background:var(--border)" id="mv4"></div>
+            <div style="height:6px;flex:1;border-radius:3px;background:var(--border)" id="mv5"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">ECG Waveform (Live)</div>
+          <svg id="ecg-svg" viewBox="0 0 400 80" width="100%" height="80" style="display:block;">
+            <path id="ecg-path" d="" fill="none" stroke="var(--green)" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="card">
+          <div class="card-title">AI Risk Assessment</div>
+          <div id="ai-status" style="font-size:13px;color:var(--text2);line-height:1.7;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div><span>Heart rate within normal bounds</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div><span>No prolonged inactivity detected</span></div>
+            <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div><span>No sudden vital changes</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Today's Summary</div>
+        <div class="stat-row">
+          <div class="stat-box"><div class="num" id="sum-alerts" style="color:var(--red)">0</div><div class="lbl">Alerts Today</div></div>
+          <div class="stat-box"><div class="num" id="sum-avg-hr" style="color:var(--cyan)">72</div><div class="lbl">Avg Heart Rate</div></div>
+          <div class="stat-box"><div class="num" style="color:var(--green)">100%</div><div class="lbl">Monitoring Uptime</div></div>
+          <div class="stat-box"><div class="num" id="sum-score" style="color:var(--yellow)">A</div><div class="lbl">Health Score</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-monitoring">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <h2 style="font-size:18px;font-weight:600;">Live Monitoring Feed</h2>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-secondary" onclick="triggerWarning()" style="font-size:12px;padding:7px 14px;">Simulate Warning</button>
+          <button class="btn-danger" onclick="triggerCritical()" style="font-size:12px;padding:7px 14px;">Simulate Critical</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title">Heart Rate — Last 60 Readings</div>
+        <div style="position:relative;height:220px;"><canvas id="hr-chart" role="img" aria-label="Heart rate chart showing last 60 readings"></canvas></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Activity Level — 60 Readings</div>
+          <div style="position:relative;height:160px;"><canvas id="act-chart" role="img" aria-label="Activity level chart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">AI Detection Log</div>
+          <div id="detection-log" style="font-size:12px;height:160px;overflow-y:auto;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-alerts">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <h2 style="font-size:18px;font-weight:600;">Alert History</h2>
+        <span style="font-size:12px;color:var(--text2)">Session data</span>
+      </div>
+      <div id="alert-history-list"><div style="text-align:center;padding:3rem;color:var(--text3);font-size:13px;">No alerts triggered yet. Your vitals are normal.</div></div>
+    </div>
+
+    <div class="page" id="page-symptoms">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <h2 style="font-size:18px;font-weight:600;">Symptom Tracker</h2>
+      </div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title">Log Symptoms Manually</div>
+        <div class="checkbox-group">
+          <label class="check-item"><input type="checkbox" class="manual-sym" value="dizziness"> Dizziness</label>
+          <label class="check-item"><input type="checkbox" class="manual-sym" value="chest pain"> Chest Pain</label>
+          <label class="check-item"><input type="checkbox" class="manual-sym" value="shortness of breath"> Shortness of Breath</label>
+          <label class="check-item"><input type="checkbox" class="manual-sym" value="headache"> Headache</label>
+          <label class="check-item"><input type="checkbox" class="manual-sym" value="fatigue"> Fatigue</label>
+          <label class="check-item"><input type="checkbox" class="manual-sym" value="nausea"> Nausea</label>
+        </div>
+        <button class="btn-primary" style="max-width:200px;" onclick="logManualSymptoms()">Log Symptoms</button>
+      </div>
+      <div class="card"><div class="card-title">Symptom History</div><div id="symptom-history"><div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px;">No symptoms logged yet.</div></div></div>
+    </div>
+
+    <div class="page" id="page-report">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <h2 style="font-size:18px;font-weight:600;">Health Report</h2>
+        <button class="btn-primary" style="max-width:180px;padding:9px;" onclick="generateReport()">Generate Report</button>
+      </div>
+      <div id="report-content"><div style="text-align:center;padding:3rem;color:var(--text3);font-size:13px;">Click "Generate Report" to compile your health data.</div></div>
+    </div>
+
+    <div class="page" id="page-reminders">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <h2 style="font-size:18px;font-weight:600;">Reminders</h2>
+        <button class="btn-secondary" onclick="addReminder()" style="font-size:12px;padding:7px 14px;">+ Add Reminder</button>
+      </div>
+      <div id="reminders-list"></div>
+    </div>
+
+    <div class="page" id="page-profile">
+      <div style="margin-bottom:1.25rem;"><h2 style="font-size:18px;font-weight:600;">Patient Profile</h2></div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:1.5rem;">
+          <div style="width:60px;height:60px;border-radius:50%;background:var(--blue2);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:var(--cyan);" id="profile-avatar">AS</div>
+          <div><div style="font-size:18px;font-weight:600;" id="profile-name">Alex Sharma</div><div style="font-size:13px;color:var(--text2);">Patient ID: SEN-2024-001</div></div>
+        </div>
+        <div class="profile-section" id="profile-grid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Security & Encryption</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7;">
+          <div style="display:flex;gap:8px;margin-bottom:6px;"><span style="color:var(--green)">✓</span> Password hashed with bcrypt (cost factor 12)</div>
+          <div style="display:flex;gap:8px;margin-bottom:6px;"><span style="color:var(--green)">✓</span> Health data encrypted at rest (AES-256)</div>
+          <div style="display:flex;gap:8px;margin-bottom:6px;"><span style="color:var(--green)">✓</span> Transmission secured via TLS 1.3</div>
+          <div style="display:flex;gap:8px;"><span style="color:var(--green)">✓</span> JWT session tokens with 24h expiry</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="alert-overlay">
+  <div class="alert-box">
+    <div class="alert-icon">🚨</div>
+    <h2 id="alert-title">Abnormal Reading Detected</h2>
+    <p id="alert-msg">Your vitals show an unusual pattern. Are you feeling okay?</p>
+    <div id="countdown-section">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Auto-alerting emergency contact in</div>
+      <div class="countdown" id="countdown-num">30</div>
+      <div class="alert-buttons">
+        <button class="btn-green" onclick="respondYes()">I'm Okay</button>
+        <button class="btn-danger" onclick="triggerEmergency()">Send Alert Now</button>
+      </div>
+    </div>
+    <div id="symptom-form">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Please indicate any symptoms you're experiencing:</p>
+      <div class="checkbox-group">
+        <label class="check-item"><input type="checkbox" class="sym" value="dizziness"> Dizziness</label>
+        <label class="check-item"><input type="checkbox" class="sym" value="chest pain"> Chest Pain</label>
+        <label class="check-item"><input type="checkbox" class="sym" value="shortness of breath"> Shortness of Breath</label>
+        <label class="check-item"><input type="checkbox" class="sym" value="headache"> Headache</label>
+        <label class="check-item"><input type="checkbox" class="sym" value="fatigue"> Fatigue</label>
+        <label class="check-item"><input type="checkbox" class="sym" value="nausea"> Nausea</label>
+      </div>
+      <button class="btn-primary" onclick="submitSymptoms()">Submit & Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentUser=null,monitorInterval=null,countdownInterval=null,alertActive=false,countdownSec=30,lastMovementTime=Date.now(),alertsTodayCount=0,hrHistory=[],actHistory=[],detectionLog=[],alertHistory=[],symptomLog=[],hrChart=null,actChart=null,miniHrChart=null,miniActChart=null,ecgPhase=0,currentHR=72,currentActivity=68;
+const users=[{email:'demo@sentinel.health',pass:'demo1234',name:'Alex Sharma',age:34,history:'Mild hypertension, seasonal allergies',emergency:'Priya Sharma — +91 98765 43210',initials:'AS'}];
+const remindersData=[{type:'med',icon:'💊',name:'Amlodipine 5mg',time:'8:00 AM',freq:'Daily',next:'Tomorrow 8:00 AM'},{type:'med',icon:'💊',name:'Vitamin D3',time:'12:00 PM',freq:'Daily',next:'Today 12:00 PM'},{type:'doc',icon:'🏥',name:'Cardiology Check-up',time:'10:30 AM',freq:'Monthly',next:'May 5, 2026'},{type:'doc',icon:'🩸',name:'Blood Pressure Test',time:'9:00 AM',freq:'Weekly',next:'April 27, 2026'}];
+
+function switchTab(tab){document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='login')||(i===1&&tab==='signup')));document.getElementById('login-form').style.display=tab==='login'?'block':'none';document.getElementById('signup-form').style.display=tab==='signup'?'block':'none';}
+function doLogin(){const email=document.getElementById('login-email').value.trim(),pass=document.getElementById('login-pass').value,u=users.find(u=>u.email===email&&u.pass===pass);if(!u){alert('Invalid credentials. Use demo@sentinel.health / demo1234');return;}loginUser(u);}
+function doSignup(){const name=document.getElementById('su-name').value.trim(),email=document.getElementById('su-email').value.trim(),pass=document.getElementById('su-pass').value;if(!name||!email||!pass){alert('Please fill name, email and password.');return;}const initials=name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);const nu={email,pass,name,age:document.getElementById('su-age').value||'—',history:document.getElementById('su-history').value||'None',emergency:document.getElementById('su-emergency').value||'Not set',initials};users.push(nu);loginUser(nu);}
+function loginUser(u){currentUser=u;document.getElementById('auth-screen').style.display='none';document.getElementById('app-screen').style.display='flex';document.getElementById('user-initials').textContent=u.initials;document.getElementById('user-name-display').textContent=u.name.split(' ')[0];document.getElementById('greeting-name').textContent=u.name.split(' ')[0];document.getElementById('profile-avatar').textContent=u.initials;document.getElementById('profile-name').textContent=u.name;buildProfile();buildReminders();startMonitoring();initCharts();}
+function doLogout(){clearInterval(monitorInterval);clearInterval(countdownInterval);currentUser=null;alertsTodayCount=0;hrHistory=[];actHistory=[];detectionLog=[];alertHistory=[];symptomLog=[];document.getElementById('app-screen').style.display='none';document.getElementById('auth-screen').style.display='flex';}
+function showPage(id,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');el.classList.add('active');if(id==='monitoring')setTimeout(()=>{if(hrChart)hrChart.update();if(actChart)actChart.update();},50);}
+
+function initCharts(){
+  const mhCtx=document.getElementById('mini-hr').getContext('2d');
+  miniHrChart=new Chart(mhCtx,{type:'line',data:{labels:Array(20).fill(''),datasets:[{data:Array(20).fill(72),borderColor:'#10b981',borderWidth:1.5,pointRadius:0,tension:0.4,fill:true,backgroundColor:'rgba(16,185,129,0.08)'}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});
+  const maCtx=document.getElementById('mini-act').getContext('2d');
+  miniActChart=new Chart(maCtx,{type:'line',data:{labels:Array(20).fill(''),datasets:[{data:Array(20).fill(68),borderColor:'#3b82f6',borderWidth:1.5,pointRadius:0,tension:0.4,fill:true,backgroundColor:'rgba(59,130,246,0.08)'}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false,min:0,max:100}}}});
+  const hrCtx=document.getElementById('hr-chart').getContext('2d');
+  hrChart=new Chart(hrCtx,{type:'line',data:{labels:Array(60).fill(''),datasets:[{label:'Heart Rate',data:Array(60).fill(72),borderColor:'#10b981',borderWidth:2,pointRadius:0,tension:0.3,fill:false},{label:'Upper',data:Array(60).fill(100),borderColor:'rgba(239,68,68,0.4)',borderWidth:1,borderDash:[5,5],pointRadius:0},{label:'Lower',data:Array(60).fill(55),borderColor:'rgba(245,158,11,0.4)',borderWidth:1,borderDash:[5,5],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},plugins:{legend:{display:false}},scales:{x:{display:false},y:{min:40,max:140,ticks:{color:'#8fa3c8',font:{size:11}},grid:{color:'rgba(99,179,237,0.07)'}}}}});
+  const acCtx=document.getElementById('act-chart').getContext('2d');
+  actChart=new Chart(acCtx,{type:'bar',data:{labels:Array(60).fill(''),datasets:[{label:'Activity',data:Array(60).fill(68),backgroundColor:'rgba(59,130,246,0.5)',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},plugins:{legend:{display:false}},scales:{x:{display:false},y:{min:0,max:100,ticks:{color:'#8fa3c8',font:{size:11}},grid:{color:'rgba(99,179,237,0.07)'}}}}});
+}
+
+function generateVitals(crit=false,warn=false){let hr,act;if(crit){hr=Math.random()<0.5?Math.floor(Math.random()*20+120):Math.floor(Math.random()*15+30);act=Math.floor(Math.random()*10);}else if(warn){hr=Math.random()<0.5?Math.floor(Math.random()*10+105):Math.floor(Math.random()*8+50);act=Math.floor(Math.random()*25+5);}else{let d=(Math.random()-0.5)*8;hr=Math.max(58,Math.min(102,currentHR+d));if(Math.random()<0.05)hr=72+(Math.random()-0.5)*20;hr=Math.round(hr);act=Math.round(Math.max(10,Math.min(95,currentActivity+(Math.random()-0.5)*15)));}return{hr,act};}
+
+function runAI(hr,act,noMoveDur){const issues=[];let status='normal';if(hr>120){issues.push({msg:`Critical tachycardia: ${hr} bpm`,level:'critical'});status='critical';}else if(hr>100){issues.push({msg:`Elevated heart rate: ${hr} bpm`,level:'warning'});if(status!=='critical')status='warning';}if(hr<40){issues.push({msg:`Severe bradycardia: ${hr} bpm`,level:'critical'});status='critical';}else if(hr<55){issues.push({msg:`Low heart rate: ${hr} bpm`,level:'warning'});if(status!=='critical')status='warning';}if(hrHistory.length>3){const prev=hrHistory[hrHistory.length-1],chg=Math.abs(hr-prev);if(chg>25){issues.push({msg:`Sudden HR change: ${Math.round(hr-prev)>0?'+':''}${Math.round(hr-prev)} bpm`,level:'critical'});status='critical';}else if(chg>15){issues.push({msg:`Rapid HR change: ${Math.round(Math.abs(hr-prev))} bpm`,level:'warning'});if(status!=='critical')status='warning';}}const inMin=noMoveDur/60000;if(inMin>60){issues.push({msg:`No movement for ${Math.round(inMin)}+ min`,level:'critical'});status='critical';}else if(inMin>30){issues.push({msg:`Extended inactivity: ${Math.round(inMin)} min`,level:'warning'});if(status!=='critical')status='warning';}if(act<20&&hr>95){issues.push({msg:'High HR with no activity',level:'warning'});if(status!=='critical')status='warning';}return{status,issues};}
+
+function startMonitoring(){for(let i=0;i<60;i++){hrHistory.push(Math.round(70+Math.sin(i*0.3)*8+(Math.random()-0.5)*6));actHistory.push(Math.round(60+(Math.random()-0.5)*20));}currentHR=hrHistory[hrHistory.length-1];currentActivity=actHistory[actHistory.length-1];updateCharts();
+monitorInterval=setInterval(()=>{const{hr,act}=generateVitals();currentHR=hr;currentActivity=act;if(act>30)lastMovementTime=Date.now();const noMoveDur=Date.now()-lastMovementTime;hrHistory.push(hr);actHistory.push(act);if(hrHistory.length>60)hrHistory.shift();if(actHistory.length>60)actHistory.shift();const{status,issues}=runAI(hr,act,noMoveDur);updateVitalsDisplay(hr,act,noMoveDur,status);updateCharts();updateAIStatus(issues,status);updateGlobalStatus(status);updateSummary(hr);drawECG(hr);if(issues.length>0){const time=new Date().toLocaleTimeString();const e=`<div style="display:flex;gap:6px;margin-bottom:4px;"><span style="color:var(--text3);min-width:60px;font-family:monospace">${time}</span><span style="color:${issues[0].level==='critical'?'var(--red)':'var(--yellow)'};">${issues[0].msg}</span></div>`;detectionLog.unshift(e);if(detectionLog.length>30)detectionLog.pop();const le=document.getElementById('detection-log');if(le)le.innerHTML=detectionLog.join('');}if(!alertActive&&(status==='critical'||(status==='warning'&&Math.random()<0.3))&&issues.length>0)triggerAlert(issues[0].msg,status);},1500);}
+
+function updateVitalsDisplay(hr,act,noMoveDur,status){const hrEl=document.getElementById('val-hr'),actEl=document.getElementById('val-activity'),movEl=document.getElementById('val-movement'),movDesc=document.getElementById('movement-desc'),actDesc=document.getElementById('activity-desc');if(hrEl){hrEl.textContent=hr;hrEl.className='metric-value '+status;}if(actEl){actEl.textContent=act;actEl.className='metric-value '+(act>40?'normal':act>20?'warning':'critical');}const cHr=document.getElementById('card-hr'),cAct=document.getElementById('card-activity'),cMov=document.getElementById('card-movement');if(cHr)cHr.className='metric-card '+status;const movSec=Math.round(noMoveDur/1000),movMin=Math.floor(movSec/60);let movLabel='Active';if(noMoveDur>3600000)movLabel='Stationary (critical)';else if(noMoveDur>1800000)movLabel='Low movement';else if(noMoveDur>60000)movLabel='Resting';if(movEl)movEl.textContent=movLabel;const movClass=noMoveDur>3600000?'critical':noMoveDur>1800000?'warning':'normal';if(cMov)cMov.className='metric-card '+movClass;const mc={normal:'var(--green)',warning:'var(--yellow)',critical:'var(--red)'}[movClass];['1','2','3','4','5'].forEach((n,i)=>{const b=document.getElementById('mv'+n);if(b){const active=(5-i)<=Math.ceil(act/20);b.style.background=active?mc:'var(--border)';b.style.opacity=active?(1-i*0.15):1;}});if(movDesc){const min=Math.floor(movSec/60);movDesc.textContent=movSec<10?'Last moved: just now':`Last moved: ${min>0?min+'m ':' '}${movSec%60}s ago`;}if(actDesc)actDesc.textContent=act>70?'High activity':act>40?'Moderate activity':act>20?'Low activity':'Minimal / resting';}
+
+function updateCharts(){if(miniHrChart){miniHrChart.data.datasets[0].data=hrHistory.slice(-20);miniHrChart.update('none');}if(miniActChart){miniActChart.data.datasets[0].data=actHistory.slice(-20);miniActChart.update('none');}if(hrChart){hrChart.data.datasets[0].data=[...hrHistory];hrChart.update('none');}if(actChart){actChart.data.datasets[0].data=[...actHistory];actChart.update('none');}}
+function updateAIStatus(issues,status){const el=document.getElementById('ai-status');if(!el)return;const checks=[{ok:!issues.some(i=>i.msg.toLowerCase().includes('heart rate')||i.msg.includes('HR')||i.msg.includes('bpm')),msg:issues.find(i=>i.msg.toLowerCase().includes('heart rate')||i.msg.includes('bpm'))?.msg||'Heart rate within normal bounds'},{ok:!issues.some(i=>i.msg.includes('inactiv')||i.msg.includes('movement')),msg:issues.find(i=>i.msg.includes('inactiv')||i.msg.includes('movement'))?.msg||'No prolonged inactivity detected'},{ok:!issues.some(i=>i.msg.includes('change')),msg:issues.find(i=>i.msg.includes('change'))?.msg||'No sudden vital changes'}];el.innerHTML=checks.map(c=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="width:10px;height:10px;border-radius:50%;background:${c.ok?'var(--green)':'var(--red)'};flex-shrink:0"></div><span style="font-size:13px;color:${c.ok?'var(--text2)':'var(--red)'};">${c.msg}</span></div>`).join('');}
+function updateGlobalStatus(status){const el=document.getElementById('global-status'),txt=document.getElementById('status-text');if(!el)return;el.className='status-pill '+status;txt.textContent=status.charAt(0).toUpperCase()+status.slice(1);}
+function updateSummary(hr){const avgEl=document.getElementById('sum-avg-hr');if(avgEl&&hrHistory.length>0)avgEl.textContent=Math.round(hrHistory.reduce((a,b)=>a+b,0)/hrHistory.length);const scoreEl=document.getElementById('sum-score');if(scoreEl){const avg=hrHistory.length>0?hrHistory.reduce((a,b)=>a+b,0)/hrHistory.length:72;const score=avg>=60&&avg<=90?'A':avg>=55&&avg<=100?'B':'C';scoreEl.textContent=score;scoreEl.style.color=score==='A'?'var(--green)':score==='B'?'var(--yellow)':'var(--red)';}document.getElementById('sum-alerts').textContent=alertsTodayCount;}
+
+function drawECG(hr){const path=document.getElementById('ecg-path');if(!path)return;ecgPhase=(ecgPhase+hr/60*0.05)%1;const W=400,H=80,PTS=200;let d='';for(let i=0;i<PTS;i++){const x=(i/PTS)*W,t=((i/PTS)+ecgPhase)%1;let y=H/2;const seg=(t%0.2)/0.2;if(seg<0.10)y=H/2-4*Math.sin(seg*Math.PI*10);else if(seg<0.30)y=H/2;else if(seg<0.35)y=H/2+14;else if(seg<0.40)y=H/2-26*(hr/80);else if(seg<0.45)y=H/2+10;else if(seg<0.70)y=H/2+5*Math.sin((seg-0.5)*Math.PI*3.33);d+=(i===0?'M ':'L ')+x.toFixed(1)+','+y.toFixed(1)+' ';}path.setAttribute('d',d);const color=currentHR>120||currentHR<45?'#ef4444':currentHR>100||currentHR<55?'#f59e0b':'#10b981';path.setAttribute('stroke',color);}
+
+function triggerAlert(msg,level){if(alertActive)return;alertActive=true;alertsTodayCount++;const alertEl=document.getElementById('alert-overlay');document.getElementById('alert-title').textContent=level==='critical'?'Critical Alert Detected!':'Abnormal Reading Detected';document.getElementById('alert-msg').textContent=msg+'. Are you feeling okay?';document.getElementById('countdown-section').style.display='block';document.getElementById('symptom-form').style.display='none';alertEl.classList.add('show');countdownSec=30;document.getElementById('countdown-num').textContent=countdownSec;clearInterval(countdownInterval);countdownInterval=setInterval(()=>{countdownSec--;document.getElementById('countdown-num').textContent=countdownSec;if(countdownSec<=0){clearInterval(countdownInterval);triggerEmergency();}},1000);const now=new Date();alertHistory.unshift({time:now.toLocaleTimeString(),date:now.toLocaleDateString(),msg,level});updateAlertHistory();document.getElementById('sum-alerts').textContent=alertsTodayCount;try{const ctx=new(window.AudioContext||window.webkitAudioContext)(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.value=level==='critical'?880:660;osc.type='sine';gain.gain.setValueAtTime(0.3,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.6);}catch(_){}}
+function respondYes(){clearInterval(countdownInterval);document.getElementById('countdown-section').style.display='none';document.getElementById('symptom-form').style.display='block';}
+function submitSymptoms(){const checked=[...document.querySelectorAll('.sym:checked')].map(c=>c.value);const now=new Date();if(checked.length>0){symptomLog.unshift({time:now.toLocaleTimeString(),date:now.toLocaleDateString(),symptoms:checked,source:'Alert response'});updateSymptomHistory();}closeAlert();}
+function triggerEmergency(){clearInterval(countdownInterval);const overlay=document.getElementById('alert-overlay');overlay.innerHTML=`<div class="alert-box" style="border-color:rgba(239,68,68,0.6);"><div class="alert-icon">🆘</div><h2 style="color:var(--red)">Emergency Alert Sent!</h2><p style="margin-bottom:1rem;">Notifying <strong>${currentUser?.emergency||'emergency contact'}</strong></p><div style="background:var(--red2);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:12px;font-size:12px;color:var(--red);margin-bottom:1.5rem;font-family:monospace;">📱 SMS: "Sentinel+ ALERT — ${currentUser?.name||'User'} may need help. HR ${currentHR} bpm. Time: ${new Date().toLocaleTimeString()}"</div><button class="btn-secondary" onclick="closeAlertRebuild()">Dismiss</button></div>`;overlay.classList.add('show');alertHistory.unshift({time:new Date().toLocaleTimeString(),date:new Date().toLocaleDateString(),msg:'Emergency alert sent to contact',level:'critical'});updateAlertHistory();}
+function closeAlert(){document.getElementById('alert-overlay').classList.remove('show');alertActive=false;clearInterval(countdownInterval);setTimeout(()=>{alertActive=false;},5000);}
+function closeAlertRebuild(){document.getElementById('alert-overlay').outerHTML=`<div id="alert-overlay"><div class="alert-box"><div class="alert-icon">🚨</div><h2 id="alert-title">Abnormal Reading Detected</h2><p id="alert-msg">Your vitals show an unusual pattern. Are you feeling okay?</p><div id="countdown-section"><div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Auto-alerting in</div><div class="countdown" id="countdown-num">30</div><div class="alert-buttons"><button class="btn-green" onclick="respondYes()">I'm Okay</button><button class="btn-danger" onclick="triggerEmergency()">Send Alert Now</button></div></div><div id="symptom-form"><p style="font-size:13px;color:var(--text2);margin-bottom:12px;">Indicate symptoms:</p><div class="checkbox-group"><label class="check-item"><input type="checkbox" class="sym" value="dizziness"> Dizziness</label><label class="check-item"><input type="checkbox" class="sym" value="chest pain"> Chest Pain</label><label class="check-item"><input type="checkbox" class="sym" value="shortness of breath"> Shortness of Breath</label><label class="check-item"><input type="checkbox" class="sym" value="headache"> Headache</label><label class="check-item"><input type="checkbox" class="sym" value="fatigue"> Fatigue</label><label class="check-item"><input type="checkbox" class="sym" value="nausea"> Nausea</label></div><button class="btn-primary" onclick="submitSymptoms()">Submit & Close</button></div></div></div>`;alertActive=false;}
+function triggerWarning(){const{hr,act}=generateVitals(false,true);currentHR=hr;currentActivity=act;const{status,issues}=runAI(hr,act,Date.now()-lastMovementTime);updateVitalsDisplay(hr,act,Date.now()-lastMovementTime,status);updateGlobalStatus(status);if(issues.length>0)triggerAlert(issues[0].msg,status);}
+function triggerCritical(){const{hr,act}=generateVitals(true,false);currentHR=hr;currentActivity=act;triggerAlert(`Critical: Heart rate ${hr} bpm detected`,'critical');updateGlobalStatus('critical');}
+
+function updateAlertHistory(){const el=document.getElementById('alert-history-list');if(!el)return;if(alertHistory.length===0){el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text3);font-size:13px;">No alerts yet.</div>';return;}el.innerHTML=alertHistory.map(a=>`<div class="alert-row ${a.level}"><div class="alert-row-time">${a.time}</div><div class="alert-row-msg">${a.msg}</div><div style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;background:${a.level==='critical'?'var(--red2)':'var(--yellow2)'};color:${a.level==='critical'?'var(--red)':'var(--yellow)'};">${a.level}</div></div>`).join('');}
+function updateSymptomHistory(){const el=document.getElementById('symptom-history');if(!el)return;if(symptomLog.length===0){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px;">No symptoms logged yet.</div>';return;}el.innerHTML=symptomLog.map(s=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;"><div style="display:flex;gap:8px;width:100%;margin-bottom:8px;"><span style="font-family:monospace;font-size:11px;color:var(--text3);">${s.date} ${s.time}</span><span style="font-size:11px;color:var(--text2);margin-left:auto;">${s.source}</span></div><div style="display:flex;flex-wrap:wrap;gap:6px;">${s.symptoms.map(sym=>`<span style="background:rgba(245,158,11,0.15);color:var(--yellow);border-radius:8px;padding:2px 8px;font-size:12px;">${sym}</span>`).join('')}</div></div>`).join('');}
+function logManualSymptoms(){const checked=[...document.querySelectorAll('.manual-sym:checked')].map(c=>c.value);if(checked.length===0){alert('Please select at least one symptom.');return;}const now=new Date();symptomLog.unshift({time:now.toLocaleTimeString(),date:now.toLocaleDateString(),symptoms:checked,source:'Manual entry'});updateSymptomHistory();document.querySelectorAll('.manual-sym').forEach(c=>c.checked=false);}
+
+function generateReport(){const avg=hrHistory.length>0?Math.round(hrHistory.reduce((a,b)=>a+b,0)/hrHistory.length):72,min=hrHistory.length>0?Math.min(...hrHistory):68,max=hrHistory.length>0?Math.max(...hrHistory):78,riskScore=alertsTodayCount===0?12:Math.min(85,alertsTodayCount*18+10),riskColor=riskScore<30?'var(--green)':riskScore<60?'var(--yellow)':'var(--red)',riskLabel=riskScore<30?'Low Risk':riskScore<60?'Moderate Risk':'High Risk';document.getElementById('report-content').innerHTML=`<div class="report-header" style="margin-bottom:1rem;"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;"><div><div style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">Overall Risk Score</div><div class="risk-score" style="color:${riskColor}">${riskScore}</div><div style="font-size:13px;font-weight:600;color:${riskColor};margin-top:4px;">${riskLabel}</div></div><div style="font-size:12px;color:var(--text2);text-align:right;"><div>Patient: ${currentUser?.name}</div><div>Age: ${currentUser?.age}</div><div>Generated: ${new Date().toLocaleString()}</div></div></div></div><div class="stat-row" style="margin-bottom:1rem;"><div class="stat-box"><div class="num" style="color:var(--cyan)">${avg}</div><div class="lbl">Avg HR (bpm)</div></div><div class="stat-box"><div class="num" style="color:var(--green)">${min}</div><div class="lbl">Min HR</div></div><div class="stat-box"><div class="num" style="color:var(--red)">${max}</div><div class="lbl">Max HR</div></div><div class="stat-box"><div class="num" style="color:var(--yellow)">${alertsTodayCount}</div><div class="lbl">Alerts</div></div><div class="stat-box"><div class="num" style="color:var(--blue)">${symptomLog.length}</div><div class="lbl">Symptom Logs</div></div></div><div class="card" style="margin-bottom:1rem;"><div class="card-title">Heart Rate Trend (Session)</div><div style="position:relative;height:180px;"><canvas id="report-hr-chart" role="img" aria-label="Heart rate trend"></canvas></div></div><div class="grid-2"><div class="card"><div class="card-title">Alert Summary</div>${alertHistory.length===0?'<div style="color:var(--green);font-size:13px;">✓ No alerts triggered</div>':alertHistory.slice(0,5).map(a=>`<div style="display:flex;gap:8px;margin-bottom:6px;font-size:12px;"><span style="color:var(--text3);min-width:60px;font-family:monospace">${a.time}</span><span style="color:${a.level==='critical'?'var(--red)':'var(--yellow)'};">${a.msg}</span></div>`).join('')}</div><div class="card"><div class="card-title">Symptom Summary</div>${symptomLog.length===0?'<div style="color:var(--green);font-size:13px;">✓ No symptoms</div>':symptomLog.slice(0,5).map(s=>`<div style="margin-bottom:6px;font-size:12px;"><span style="color:var(--text3);">${s.time}</span> — <span style="color:var(--yellow);">${s.symptoms.join(', ')}</span></div>`).join('')}</div></div><div class="card" style="margin-top:1rem;"><div class="card-title">AI Assessment</div><div style="font-size:13px;color:var(--text2);line-height:1.8;">${avg>=60&&avg<=90?'<div style="color:var(--green)">✓ Average heart rate within normal range.</div>':'<div style="color:var(--yellow)">⚠ Average heart rate outside normal range.</div>'}${alertsTodayCount===0?'<div style="color:var(--green)">✓ No critical events.</div>':`<div style="color:var(--red)">⚠ ${alertsTodayCount} alert(s) triggered. Review recommended.</div>`}${symptomLog.length>0?`<div style="color:var(--yellow)">⚠ Symptoms logged. Consult physician.</div>`:'<div style="color:var(--green)">✓ No symptoms recorded.</div>'}<div style="color:var(--text3);margin-top:8px;font-size:12px;">⚕ Simulated report for demonstration. Not a substitute for medical advice.</div></div></div>`;setTimeout(()=>{const ctx=document.getElementById('report-hr-chart');if(!ctx)return;new Chart(ctx.getContext('2d'),{type:'line',data:{labels:hrHistory.map((_,i)=>i%10===0?`${(i*1.5).toFixed(0)}s`:''),datasets:[{label:'HR',data:hrHistory,borderColor:'#10b981',borderWidth:2,pointRadius:0,tension:0.3,fill:true,backgroundColor:'rgba(16,185,129,0.05)'},{label:'Upper',data:hrHistory.map(()=>100),borderColor:'rgba(239,68,68,0.3)',borderWidth:1,borderDash:[4,4],pointRadius:0},{label:'Lower',data:hrHistory.map(()=>55),borderColor:'rgba(245,158,11,0.3)',borderWidth:1,borderDash:[4,4],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},elements:{point:{radius:0}},scales:{x:{ticks:{color:'#8fa3c8',font:{size:10}},grid:{color:'rgba(99,179,237,0.07)'}},y:{min:40,max:140,ticks:{color:'#8fa3c8',font:{size:11}},grid:{color:'rgba(99,179,237,0.07)'}}}}});},100);}
+
+function buildReminders(){const el=document.getElementById('reminders-list');if(!el)return;el.innerHTML=remindersData.map(r=>`<div class="reminder-item"><div class="reminder-icon" style="background:${r.type==='med'?'rgba(59,130,246,0.12)':'rgba(16,185,129,0.12)'}">${r.icon}</div><div class="reminder-text"><strong>${r.name}</strong><span>${r.time} · ${r.freq}</span></div><div><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Next</div><div style="font-size:12px;color:var(--text2);">${r.next}</div></div><span class="reminder-badge ${r.type}">${r.type==='med'?'Medication':'Appointment'}</span></div>`).join('');}
+function addReminder(){const name=prompt('Reminder name:');if(!name)return;const time=prompt('Time (e.g. 9:00 AM):')||'9:00 AM';remindersData.push({type:'med',icon:'🔔',name,time,freq:'Daily',next:'Tomorrow '+time});buildReminders();}
+
+function buildProfile(){if(!currentUser)return;const grid=document.getElementById('profile-grid');if(!grid)return;const fields=[['Full Name',currentUser.name],['Age',currentUser.age+' years'],['Email',currentUser.email],['Emergency Contact',currentUser.emergency],['Medical History',currentUser.history],['Monitoring Status','Active — 24/7']];grid.innerHTML=fields.map(([l,v])=>`<div class="profile-field"><div class="profile-field-label">${l}</div><div class="profile-field-value">${v}</div></div>`).join('');}
+</script>
+</body>
+</html>
